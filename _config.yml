@@ -28,7 +28,7 @@ twitter_username: goldmorbid
 github_username:  erewl
 
 # Build settings
-theme: jekyll-theme-cayman-blog
+# theme: jekyll-theme-cayman-blog
 plugins:
  - jekyll-feed
 
