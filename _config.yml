@@ -29,7 +29,7 @@ twitter_username: goldmorbid
 github_username:  erewl
 
 # Build settings
-# theme: jekyll-theme-cayman-blog
+theme: jekyll-theme-cayman
 plugins:
  - jekyll-feed
 
@@ -53,4 +53,3 @@ plugins:
 #   - vendor/gems/
 #   - vendor/ruby/
 
-theme: jekyll-theme-cayman

@@ -15,8 +15,6 @@ gem "minima", "~> 2.5"
 # gem "github-pages", group: :jekyll_plugins
 # If you have any plugins, put them here!
 
-gem "jekyll-theme-cayman-blog", "~> 0.0.9"
-
 group :jekyll_plugins do
   gem "jekyll-feed", "~> 0.12"
 end

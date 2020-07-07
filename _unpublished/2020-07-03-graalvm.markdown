@@ -4,11 +4,55 @@ title:  "Playing around with GraalVM"
 date:   2020-07-03 20:39:00 +0200
 categories: graalvm scala native-image
 ---
+# Building native images and compiling with GraalVM and sbt
 
+At work we organized a two-day long Hackathon, a colleague and I took the chance to dig into the wonderful world of GraalVM. I've heard of GraalVM first around two years ago, where Oleg soandso toured through Java User Groups in Germany and held a talk about GraalVM.
+Thanks to the Hackathon I took finally the time to get to know GraalVM a bit better.
 
+And with this blog post I want to share our findings, experiences and results, as they might be helpful for you too!
 
-### Setup
-### Compiling
-### Building native images
-### Configuring
-### Source
+## Why GraalVM?
+GraalVM is a high-performance compiler that 
+
+* * *
+## Setup with sbt
+To compile and build native images with GraalVM you have prepare to things:
+- install GraalVM
+- add the sbt-native-packager to your project
+
+The GraalVM's [official website](https://www.graalvm.org/getting-started/#install-graalvm) provides guides to install it for every OS.
+```
+$ gu install native-image
+```
+
+Once you have it installed, you can add the plugin [sbt-native-packager](https://sbt-native-packager.readthedocs.io/en/latest/) like this:
+```
+// in your project/plugins.sbt
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
+```
+And in your module/project you will need to enable the NativeImagePlugin:
+```
+// in your build.sbt
+enablePlugins(GraalVMNativeImagePlugin)
+```
+
+Autocompletion should now suggest you some graal-commands like
+```
+sbt
+-> graalvm-native-image:
+```
+* * *
+
+## Compiling
+To start compiling with GraalVM you have to specify the `java_home` variable when booting up sbt, if it isnt your main Java-Version  on your machine
+```
+sbt -java_home 'PATH/TO/GRAAL_VM/bin'
+```
+
+## Building native images
+
+## Configuring
+
+* * * 
+### Sources
+Here are some articles, blog posts etc. that I read while working on this topic:
