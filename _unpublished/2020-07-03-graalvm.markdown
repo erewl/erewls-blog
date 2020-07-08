@@ -56,3 +56,7 @@ sbt -java_home 'PATH/TO/GRAAL_VM/bin'
 * * * 
 ### Sources
 Here are some articles, blog posts etc. that I read while working on this topic:
+
+
+https://carolchen.me/blog/jits-intro/
+https://carolchen.me/blog/jits-impls/
