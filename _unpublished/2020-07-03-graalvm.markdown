@@ -6,50 +6,165 @@ categories: graalvm scala native-image
 ---
 # Building native images and compiling with GraalVM and sbt
 
-At work we organized a two-day long Hackathon, a colleague and I took the chance to dig into the wonderful world of GraalVM. I've heard of GraalVM first around two years ago, where Oleg soandso toured through Java User Groups in Germany and held a talk about GraalVM.
+At work we organized a two-day long Hackathon, a colleague and I took the chance to dig into the wonderful world of GraalVM. 
+
+I've heard of GraalVM first around two years ago, where Oleg Šelajev toured through Java User Groups in Germany and held talks about GraalVM. [Here](https://www.youtube.com/watch?v=GinNxS3OSi0) is one from 2019 (not Germany, but Spain this time).
+
 Thanks to the Hackathon I took finally the time to get to know GraalVM a bit better.
-
-And with this blog post I want to share our findings, experiences and results, as they might be helpful for you too!
-
-## Why GraalVM?
-GraalVM is a high-performance compiler that 
+With this blog post I want to share our findings, experiences and results, as they might be helpful for you too!
 
 * * *
-## Setup with sbt
+## What is GraalVM?
+GraalVM is a high-performance compiler that 
+This should only give you a short understanding what it is and what it can do. You can read and watch more about it for example [here](), [here]() and [here]().
+
+* * *
+## Project setup
+
+As an example project I thought of a simple use case, yet a bit more complex than just "Hello World!".
+We are using an API that exposes one endpoint.
+The full setup you can find [here](meaningfulgithublink TODO). But I'll give you a short summary:
+The project is built around following libraries, no particular reason, simply because I like them.
+- cats for working with effects, such as IO
+- http4s for running the server
+- tapir for defining the endpoints
+- pureconfig for reading config-files
+- circe for json de/serialisation
+- logback for logging
+
+In Jens Grassel's book [pfhais](leanpub link) I have first saw the transactional start up of a server, which I really liked and used it in this project as well. 
+(maybe this can go out)
+
+* * *
+## Setup GraalVM with sbt
+
+Now that we have our initial project all set up we can continue with adding GraalVM to our project.
 To compile and build native images with GraalVM you have prepare to things:
 - install GraalVM
 - add the sbt-native-packager to your project
 
+Autocompletion should help you with finding the graal-commands, e.g.:
+```sbt
+sbt graalvm-native-image:packageBin
+```
+* * *
+
+## Compiling and running
+To start compiling with GraalVM you have to specify the `java_home` variable when booting up sbt, if it is not your main Java-Version on your machine:
+```
+export GRAAL_HOME=/Library/Java/JavaVirtualMachines/graalvm-ce-java8-20.1.0/Contents/Home
+sbt -java-home $GRAALHOME
+```
+You can also verify that sbt is using GraalVM like so
+```
+$ sbt console
+[info] Starting scala interpreter...
+Welcome to Scala 2.12.10 (OpenJDK 64-Bit Server VM GraalVM CE 20.1.0, Java 1.8.0_252).
+Type in expressions for evaluation. Or try :help.
+scala> :q
+```
+(for non vim users it might not seem too trivial to be able to exit the console via the last command `:q`, I was one of them ;) )
+
+That means everything you run in your sbt instance, is running on and is getting compiled by GraalVM. Awesome!
+
+Before getting started with native images, we will build a regular JAR-file.
+
+With the [sbt-assembly](https://github.com/sbt/sbt-assembly) plugin you can create JAR-files with all of its dependencies (fat JARs).
+`sbt assembly` creates this `target/scala-2.12/apply-at-vdb-assembly-0.1.0-SNAPSHOT.jar` file which you can just run with `java -jar target/scala-2.12/apply-at-vdb-assembly-0.1.0-SNAPSHOT.jar` from the root directory of this project.
+
+I didn't measure the compile time and build time with GraalVM and to be honest with a project in this size I haven't noticed any significant difference.
+
+This should have a file size of round and about 42MB. We will come back to this later.
+
+
+Next step is now to become strong and independent and learn to run without an underlying JVM! We are going to build a native image.
+
+## Building native images
+
 The GraalVM's [official website](https://www.graalvm.org/getting-started/#install-graalvm) provides guides to install it for every OS.
 ```
-$ gu install native-image
+$ $GRAALHOME/bin/gu install native-image
 ```
 
-Once you have it installed, you can add the plugin [sbt-native-packager](https://sbt-native-packager.readthedocs.io/en/latest/) like this:
+The [sbt-native-packager](https://sbt-native-packager.readthedocs.io/en/latest/) provides functionality to build packages in an easy way (e.g. Docker) and it also provides support for building native images. 
+In order to do so via sbt commands we will add this to our project:
 ```
 // in your project/plugins.sbt
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
 ```
-And in your module/project you will need to enable the NativeImagePlugin:
+And in our project we will enable the `GraalVMNativeImagePlugin`:
 ```
 // in your build.sbt
 enablePlugins(GraalVMNativeImagePlugin)
 ```
 
-Autocompletion should now suggest you some graal-commands like
-```
-sbt
--> graalvm-native-image:
-```
-* * *
+If you are still inside sbt, you might want to give it a `reload`. Next up we can run `sbt graalvm-native-image:packageBin` and see what we get. This might take a while (for me it took about a minute)
 
-## Compiling
-To start compiling with GraalVM you have to specify the `java_home` variable when booting up sbt, if it isnt your main Java-Version  on your machine
+First we get a bunch of warnings:
 ```
-sbt -java_home 'PATH/TO/GRAAL_VM/bin'
+[error] warning: unknown locality of class Lde/katrin/pricetracker/server/Main$anon$exportedReader$macro$24$1;, assuming class is not local. To remove the warning report an issue to the library or language author. The issue is caused by Lde/katrin/pricetracker/server/Main$anon$exportedReader$macro$24$1; which is not following the naming convention.
+
+[error] warning: unknown locality of class Lfs2/internal/Algebra$Done$2$;, assuming class is not local. To remove the warning report an issue to the library or language author. The issue is caused by Lfs2/internal/Algebra$Done$2$; which is not following the naming convention.
 ```
 
-## Building native images
+But ultimately it fails with:
+```
+Error: com.oracle.graal.pointsto.constraints.UnresolvedElementException: Discovered unresolved type during parsing: org.slf4j.impl.StaticLoggerBinder. To diagnose the issue you can use the --allow-incomplete-classpath option. The missing type is then reported at run time when it is accessed the first time.
+```
+(TODO explain why)
+(TODO INVESTIGATE ABOUT MACROS)
+
+So we do as advised and start fine-tuning our GraalVM-setup:
+
+```
+// in our build.sbt
+graalVMNativeImageOptions ++= Seq(
+  "-H:+ReportExceptionStackTraces",
+  "--allow-incomplete-classpath",
+)
+```
+`ReportExceptionStackTraces` does exactly what its name says, prints stack traces of exception which helps troubleshooting.
+
+The option `allow-incomplete-classpath` also has a quite expressive name. Something's like, the StaticLoggerBinder, only get resolved at runtime, meaning the at compile time the classpath can be incomplete.
+During the build of a native image GraalVM tries to resolve those runtime dependencies already at compile time [SOURCE NEEDED STILL](). With this flag we say GraalVM "hey, don't worry about it now, we cross the bridge when we get there".
+
+A `reload` (or restart) of sbt is needed to activate these new options. And we can try to build the native image up new.
+This time the build finished successfully and the executable file `target/graalvm-native-image/apply-at-vdb` has been created!
+This is an executable we can run without a JVM:
+```
+$ target/graalvm-native-image/apply-at-vdb
+```
+But what's that? We can't actually start it!
+```
+$ target/graalvm-native-image/apply-at-vdb
+
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+*** An error occured! ***
+Cannot convert configuration to a de.erewl.pricetracker.server.Config. Failures are:
+  at the root:
+    - Key not found: 'host'.
+    - Key not found: 'port'.
+```
+The first three lines relate to the error that occurred during the first build. It simply says that logging hasn't been setup correctly (often due to the absence of a `src/main/resources/logback.xml`), triggering the default setting of not logging anything at all.
+
+
+
+After the web server is started like that we can send a POST request to our exposed endpoint via Postman or similar:
+```
+POST localhost:8080/api/v1/apply
+
+{
+    "email": "my@email.de",
+    "name": "itsame",
+    "phoneNumber": "1234567890",
+    "applicationBase64": "VGhpcyBjb3VsZCBiZSB5b3VyIGFwcGxpY2F0aW9uIQ=="
+}
+```
+
+But let's try now to tackle the error messages:
+
 
 ## Configuring
 
