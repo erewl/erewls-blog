@@ -148,8 +148,32 @@ Cannot convert configuration to a de.erewl.pricetracker.server.Config. Failures 
     - Key not found: 'port'.
 ```
 The first three lines relate to the error that occurred during the first build. It simply says that logging hasn't been setup correctly (often due to the absence of a `src/main/resources/logback.xml`), triggering the default setting of not logging anything at all.
+The second error states that a configuration file has not the right keys or cannot be found at all.
+Looking into `src/main/resources`:
+```
+$ ls src/main/resources/
+application.conf  logback.xml
+```
+and peeking into `application.conf`:
+```
+$ cat src/main/resources/application.conf
+host = "localhost"
+port = 8080
+```
+Hm, so everything is actually in place! But somehow GraalVM can't find them. 
+We have to do more GraalVM fine-tuning here.
+By default GraalVM doesn't include any resource/configuration-files.
+[-HIncludeResourceConfigurationFiles](https://www.graalvm.org/docs/Native-Image/user/RESOURCES)
+The option `-H:IncludeResources` defines which files to include in the native image.
 
-
+```
+// in our build.sbt
+graalVMNativeImageOptions ++= Seq(
+  "-H:+ReportExceptionStackTraces",
+  "--allow-incomplete-classpath",
+  "-H:IncludeResources=.*\\.conf,.*\\.xml,.*\\.properties",
+)
+```
 
 After the web server is started like that we can send a POST request to our exposed endpoint via Postman or similar:
 ```
