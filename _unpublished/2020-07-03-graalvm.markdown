@@ -18,6 +18,8 @@ With this blog post I want to share our findings, experiences and results, as th
 GraalVM is a high-performance compiler that 
 This should only give you a short understanding what it is and what it can do. You can read and watch more about it for example [here](), [here]() and [here]().
 
+Our motivation for trying out GraalVM were tackling the pain points of Scala and Java projects and microservices.
+Scala's long compile times and 
 * * *
 ## Project setup
 
@@ -55,7 +57,7 @@ To start compiling with GraalVM you have to specify the `java_home` variable whe
 export GRAAL_HOME=/Library/Java/JavaVirtualMachines/graalvm-ce-java8-20.1.0/Contents/Home
 sbt -java-home $GRAALHOME
 ```
-You can also verify that sbt is using GraalVM like so
+We can also verify that sbt is using GraalVM like so
 ```
 $ sbt console
 [info] Starting scala interpreter...
@@ -65,21 +67,23 @@ scala> :q
 ```
 (for non vim users it might not seem too trivial to be able to exit the console via the last command `:q`, I was one of them ;) )
 
-That means everything you run in your sbt instance, is running on and is getting compiled by GraalVM. Awesome!
+That means everything we run in your sbt instance, is running on and is getting compiled by GraalVM. Awesome!
 
 Before getting started with native images, we will build a regular JAR-file.
 
 With the [sbt-assembly](https://github.com/sbt/sbt-assembly) plugin you can create JAR-files with all of its dependencies (fat JARs).
 `sbt assembly` creates this `target/scala-2.12/apply-at-vdb-assembly-0.1.0-SNAPSHOT.jar` file which you can just run with `java -jar target/scala-2.12/apply-at-vdb-assembly-0.1.0-SNAPSHOT.jar` from the root directory of this project.
 
-I didn't measure the compile time and build time with GraalVM and to be honest with a project in this size I haven't noticed any significant difference.
+I didn't measure the compile time and build time with GraalVM and to be honest with a project in this size I haven't noticed any significant difference. But there is this [post]() by So And So which benchmarks the compile times of a regular JVM and GraalVM.
 
-This should have a file size of round and about 42MB. We will come back to this later.
+In general, sbt's boot up time is just what is taking quite some time, even with GraalVM as and underlying JVM.
+In this project it was still bearable but in larger project it becomes problematic.
 
-
-Next step is now to become strong and independent and learn to run without an underlying JVM! We are going to build a native image.
+Anyways, next step is now to become strong and independent and learn to run without an underlying JVM! We are going to build a native image.
 
 ## Building native images
+
+### Setup
 
 The GraalVM's [official website](https://www.graalvm.org/getting-started/#install-graalvm) provides guides to install it for every OS.
 ```
@@ -97,6 +101,8 @@ And in our project we will enable the `GraalVMNativeImagePlugin`:
 // in your build.sbt
 enablePlugins(GraalVMNativeImagePlugin)
 ```
+
+### First try building a native image
 
 If you are still inside sbt, you might want to give it a `reload`. Next up we can run `sbt graalvm-native-image:packageBin` and see what we get. This might take a while (for me it took about a minute)
 
@@ -127,6 +133,8 @@ graalVMNativeImageOptions ++= Seq(
 
 The option `allow-incomplete-classpath` also has a quite expressive name. Something's like, the StaticLoggerBinder, only get resolved at runtime, meaning the at compile time the classpath can be incomplete.
 During the build of a native image GraalVM tries to resolve those runtime dependencies already at compile time [SOURCE NEEDED STILL](). With this flag we say GraalVM "hey, don't worry about it now, we cross the bridge when we get there".
+
+### Adding resource files
 
 A `reload` (or restart) of sbt is needed to activate these new options. And we can try to build the native image up new.
 This time the build finished successfully and the executable file `target/graalvm-native-image/apply-at-vdb` has been created!
@@ -164,18 +172,29 @@ Hm, so everything is actually in place! But somehow GraalVM can't find them.
 We have to do more GraalVM fine-tuning here.
 By default GraalVM doesn't include any resource/configuration-files.
 [-HIncludeResourceConfigurationFiles](https://www.graalvm.org/docs/Native-Image/user/RESOURCES)
-The option `-H:IncludeResources` defines which files to include in the native image.
+The option `-H:IncludeResourceConfigurationFiles=path/to/resource-config.json` defines a path to a json-configuration file:
+So inside the `resource-config.json` we can include our `application.conf` and our `logback.xml`. Or we can let GraalVM help us with building this file.
+With the command `comaaaaaaand` GraalVM intercepts the dynamic lookups during runtime and write them to the files: `jni-config.json`, `proxy-config.json`, `reflect-config.json` and `resource-config.json`.
+For now I just look at the latter.
 
+I include the path to this generated file in the GraalVMNativeImageOptions:
 ```
 // in our build.sbt
 graalVMNativeImageOptions ++= Seq(
   "-H:+ReportExceptionStackTraces",
   "--allow-incomplete-classpath",
-  "-H:IncludeResources=.*\\.conf,.*\\.xml,.*\\.properties",
+  "-H:IncludeResourceConfigurationFiles=/configs/resource-config.json",
 )
 ```
+Hoping for the best, I built the image, start up the server:
+```
+$ target/graalvm-native-image/apply-at-vdb
 
-After the web server is started like that we can send a POST request to our exposed endpoint via Postman or similar:
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+```
+Hmmm, still no logging, sadly . But we can finally  send a POST request to our exposed endpoint via Postman or similar:
 ```
 POST localhost:8080/api/v1/apply
 
@@ -187,15 +206,22 @@ POST localhost:8080/api/v1/apply
 }
 ```
 
-But let's try now to tackle the error messages:
+### Investigating the missing logging
 
 
-## Configuring
+## Summary
+
+The initial start and setup of GraalVM with sbt is pretty easy and straight forward.
+Getting GraalVM to compile a sbt project is nice and simple. The challenge is to get it to build a good native image. This requires a lot of fine tuning. Getting the logging up and running on a native image was the biggest challenge for me with this small project.
+
+* * *
+
+The next post will be about getting the native image inside a docker container.
+This will be actually a bit more straight forward
 
 * * * 
 ### Sources
 Here are some articles, blog posts etc. that I read while working on this topic:
-
 
 https://carolchen.me/blog/jits-intro/
 https://carolchen.me/blog/jits-impls/
