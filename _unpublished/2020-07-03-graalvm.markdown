@@ -207,7 +207,17 @@ POST localhost:8080/api/v1/apply
 ```
 
 ### Investigating the missing logging
+It was a real head scratcher for me why the logging wasn't working.
+I actually had to let this blog post rest for a few weeks and had a look at it.
+So first I wanted to have a look if it was an overall issue with logging. So I tried the `java.util.Logging` library as it stated that GraalVM supports any logging that depends on that. And with that logging was working.
+So it must be something with the dependencies? Is logback and slf4j not depending on this?
 
+For further investigation, I added the dependency-graph viewer and checked out the dependency-tree with `sbt dependencyBrowserTree`. Logback wasn't included in the dependency tree.
+Which is odd! Logback is clearly in the library-dependencies. But when I looked into it I saw that it at `% Runtime` appended. Probably from some weird copy pasting that I do when gathering my dependencies.
+I actually didn't know what this meant. So I looked it up, I found answers in the [sbt reference manual](https://www.scala-sbt.org/1.x/docs/Scopes.html#Scoping+by+the+configuration+axis)
+and apparently Runtime defines the classpath when you run your program with `sbt run`. So this explains why logging was only working, when we run our server from inside sbt!
+
+I am so happy that this was fixable so easily! But daaaamn, that took me some time to figure out :')
 
 ## Summary
 
