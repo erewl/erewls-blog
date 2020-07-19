@@ -10,37 +10,59 @@ At work we organized a two-day long Hackathon, a colleague and I took the chance
 
 I've heard of GraalVM first around two years ago, where Oleg Šelajev toured through Java User Groups in Germany and held talks about GraalVM. [Here](https://www.youtube.com/watch?v=GinNxS3OSi0) is one from 2019 (not Germany, but Spain this time).
 
+GraalVM promises a significant speed up in compile times and as I am working with Scala which is notoriously known for its long compile times this seems interesting.
+Furthermore GraalVM provides functionality to build native executables. Meaning, an application can be run without a Java Virtual Machine.
+
 Thanks to the Hackathon I took finally the time to get to know GraalVM a bit better.
 With this blog post I want to share our findings, experiences and results, as they might be helpful for you too!
 
-* * *
-## What is GraalVM?
-GraalVM is a high-performance compiler that 
+If you want to read a more elaborate answer to what GraalVM is.
+You can expand the following section.
+
+<details>
+  <summary>About GraalVM</summary>
+
+  ## What is GraalVM?
+
+  GraalVM is a high-performance compiler. 
 This should only give you a short understanding what it is and what it can do. You can read and watch more about it for example [here](), [here]() and [here]().
 
 Our motivation for trying out GraalVM were tackling the pain points of Scala and Java projects and microservices.
 Scala's long compile times and 
-* * *
-## Project setup
+</details>
 
-As an example project I thought of a simple use case, yet a bit more complex than just "Hello World!".
-We are using an API that exposes one endpoint.
+## Project setup
+The project we worked on during the Hackathon is an API that is used to apply as an developer at the company.
+Exposing one endpoint with which a resume and contact information can be submitted.
+
+It is also a good project to test out GraalVM, nothing too complex but also as simple as "Hello World".
+
 The full setup you can find [here](meaningfulgithublink TODO). But I'll give you a short summary:
 The project is built around following libraries, no particular reason, simply because I like them.
-- cats for working with effects, such as IO
-- http4s for running the server
-- tapir for defining the endpoints
-- pureconfig for reading config-files
-- circe for json de/serialisation
-- logback for logging
+- *cats* for working with effects, such as IO
+- *http4s* for running the server
+- *tapir* for defining the endpoints
+- *circe* for json de/serialisation
+- *pureconfig* for reading config-files
+- *logback* for logging
 
-In Jens Grassel's book [pfhais](leanpub link) I have first saw the transactional start up of a server, which I really liked and used it in this project as well. 
-(maybe this can go out)
+The project can be run via `sbt run ` and with Postman or similar can be sent POST-request like so:
+```
+POST localhost:8080/api/v1/apply
 
-* * *
+{
+    "email": "my@email.de",
+    "name": "itsame",
+    "phoneNumber": "1234567890",
+    "applicationBase64": "VGhpcyBjb3VsZCBiZSB5b3VyIGFwcGxpY2F0aW9uIQ=="
+}
+```
+
+
 ## Setup GraalVM with sbt
 
-Now that we have our initial project all set up we can continue with adding GraalVM to our project.
+With this initial project setup, GraalVM can be set up.
+
 To compile and build native images with GraalVM you have prepare to things:
 - install GraalVM
 - add the sbt-native-packager to your project
@@ -52,20 +74,21 @@ sbt graalvm-native-image:packageBin
 * * *
 
 ## Compiling and running
-To start compiling with GraalVM you have to specify the `java_home` variable when booting up sbt, if it is not your main Java-Version on your machine:
+It has to be specified in sbt that not the regular JDK/JVM is used. This can be done with the `java_home` variable on sbt bootup:
+
 ```
 export GRAAL_HOME=/Library/Java/JavaVirtualMachines/graalvm-ce-java8-20.1.0/Contents/Home
 sbt -java-home $GRAALHOME
 ```
-We can also verify that sbt is using GraalVM like so
+The path to GraalVM can vary depending on OS and installation. 
+I followed the basic installation for MacOS.
+
+We can also verify that sbt is using GraalVM like so:
 ```
-$ sbt console
-[info] Starting scala interpreter...
-Welcome to Scala 2.12.10 (OpenJDK 64-Bit Server VM GraalVM CE 20.1.0, Java 1.8.0_252).
-Type in expressions for evaluation. Or try :help.
-scala> :q
+$ sbt 
+scala> eval System.getProperty("java.home")
+[info] ans: String = /Library/Java/JavaVirtualMachines/graalvm-ce-java8-20.1.0/Contents/Home/jre
 ```
-(for non vim users it might not seem too trivial to be able to exit the console via the last command `:q`, I was one of them ;) )
 
 That means everything we run in your sbt instance, is running on and is getting compiled by GraalVM. Awesome!
 
@@ -76,8 +99,7 @@ With the [sbt-assembly](https://github.com/sbt/sbt-assembly) plugin you can crea
 
 I didn't measure the compile time and build time with GraalVM and to be honest with a project in this size I haven't noticed any significant difference. But there is this [post]() by So And So which benchmarks the compile times of a regular JVM and GraalVM.
 
-In general, sbt's boot up time is just what is taking quite some time, even with GraalVM as and underlying JVM.
-In this project it was still bearable but in larger project it becomes problematic.
+In general, sbt's boot up time is just what is taking quite some time, and also with GraalVM as an underlying JVM I didn't notice a speed up with that.
 
 Anyways, next step is now to become strong and independent and learn to run without an underlying JVM! We are going to build a native image.
 
@@ -93,12 +115,12 @@ $ $GRAALHOME/bin/gu install native-image
 The [sbt-native-packager](https://sbt-native-packager.readthedocs.io/en/latest/) provides functionality to build packages in an easy way (e.g. Docker) and it also provides support for building native images. 
 In order to do so via sbt commands we will add this to our project:
 ```
-// in your project/plugins.sbt
+// inside project/plugins.sbt
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
 ```
-And in our project we will enable the `GraalVMNativeImagePlugin`:
+And in the project the `GraalVMNativeImagePlugin` needs to be enabled:
 ```
-// in your build.sbt
+// inside build.sbt
 enablePlugins(GraalVMNativeImagePlugin)
 ```
 
@@ -120,29 +142,31 @@ Error: com.oracle.graal.pointsto.constraints.UnresolvedElementException: Discove
 (TODO explain why)
 (TODO INVESTIGATE ABOUT MACROS)
 
-So we do as advised and start fine-tuning our GraalVM-setup:
+Actually some good hints on where to start fine-tuning the GraalVM config:
 
 ```
-// in our build.sbt
+// inside build.sbt
 graalVMNativeImageOptions ++= Seq(
   "-H:+ReportExceptionStackTraces",
   "--allow-incomplete-classpath",
 )
 ```
-`ReportExceptionStackTraces` does exactly what its name says, prints stack traces of exception which helps troubleshooting.
 
-The option `allow-incomplete-classpath` also has a quite expressive name. Something's like, the StaticLoggerBinder, only get resolved at runtime, meaning the at compile time the classpath can be incomplete.
-During the build of a native image GraalVM tries to resolve those runtime dependencies already at compile time [SOURCE NEEDED STILL](). With this flag we say GraalVM "hey, don't worry about it now, we cross the bridge when we get there".
+`ReportExceptionStackTraces` does exactly what its name says, printing stack traces of exception which helps troubleshooting.
+
+The option `allow-incomplete-classpath` also has a quite expressive name. Something's like, a `StaticLoggerBinder`, only get resolved at runtime, meaning at compile time the classpath can be incomplete.
+
+During the build of a native image GraalVM tries to resolve those runtime dependencies already at compile time [SOURCE NEEDED STILL](). With this flag GraalVM knows "hey, don't worry about it now, we cross the bridge when we get there".
 
 ### Adding resource files
 
 A `reload` (or restart) of sbt is needed to activate these new options. And we can try to build the native image up new.
 This time the build finished successfully and the executable file `target/graalvm-native-image/apply-at-vdb` has been created!
-This is an executable we can run without a JVM:
+This is an executable that can be run without a JVM:
 ```
 $ target/graalvm-native-image/apply-at-vdb
 ```
-But what's that? We can't actually start it!
+But what's that? It actually cannot be started...
 ```
 $ target/graalvm-native-image/apply-at-vdb
 
@@ -169,15 +193,19 @@ host = "localhost"
 port = 8080
 ```
 Hm, so everything is actually in place! But somehow GraalVM can't find them. 
-We have to do more GraalVM fine-tuning here.
+It requires still some more GraalVM fine-tuning here.
+
 By default GraalVM doesn't include any resource/configuration-files.
 [-HIncludeResourceConfigurationFiles](https://www.graalvm.org/docs/Native-Image/user/RESOURCES)
 The option `-H:IncludeResourceConfigurationFiles=path/to/resource-config.json` defines a path to a json-configuration file:
-So inside the `resource-config.json` we can include our `application.conf` and our `logback.xml`. Or we can let GraalVM help us with building this file.
+So inside the `resource-config.json` we can include our `application.conf` and our `logback.xml`. 
+But writing those config files can be tedious and it is difficult in larger projects to find all necessary classes that need to be included.
+
+GraalVM provides some support with writing those files and actually does all the work.
 With the command `comaaaaaaand` GraalVM intercepts the dynamic lookups during runtime and write them to the files: `jni-config.json`, `proxy-config.json`, `reflect-config.json` and `resource-config.json`.
 For now I just look at the latter.
 
-I include the path to this generated file in the GraalVMNativeImageOptions:
+Those generated files can be included in the GraalVMNativeImageOptions:
 ```
 // in our build.sbt
 graalVMNativeImageOptions ++= Seq(
@@ -186,7 +214,7 @@ graalVMNativeImageOptions ++= Seq(
   "-H:IncludeResourceConfigurationFiles=/configs/resource-config.json",
 )
 ```
-Hoping for the best, I built the image, start up the server:
+Hoping for the best, I built the image which was successful and start up the server:
 ```
 $ target/graalvm-native-image/apply-at-vdb
 
@@ -194,7 +222,7 @@ SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
 SLF4J: Defaulting to no-operation (NOP) logger implementation
 SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
 ```
-Hmmm, still no logging, sadly . But we can finally  send a POST request to our exposed endpoint via Postman or similar:
+Hmmm, still no logging, sadly . But the server is actually running and can receive POST requests via its exposed endpoint:
 ```
 POST localhost:8080/api/v1/apply
 
@@ -209,25 +237,35 @@ POST localhost:8080/api/v1/apply
 ### Investigating the missing logging
 It was a real head scratcher for me why the logging wasn't working.
 I actually had to let this blog post rest for a few weeks and had a look at it.
-So first I wanted to have a look if it was an overall issue with logging. So I tried the `java.util.Logging` library as it stated that GraalVM supports any logging that depends on that. And with that logging was working.
-So it must be something with the dependencies? Is logback and slf4j not depending on this?
+
+So first I wanted to have a look if it was an overall issue with logging. 
+I stepped back from using logging-framework and tried the most basic logging with the java-integrated `java.util.Logging`. GraalVM's docs stated that GraalVM supports any logging that depends on that. 
+
+And with that logging was working.
+
+So it must be something with the dependencies?
 
 For further investigation, I added the dependency-graph viewer and checked out the dependency-tree with `sbt dependencyBrowserTree`. Logback wasn't included in the dependency tree.
-Which is odd! Logback is clearly in the library-dependencies. But when I looked into it I saw that it at `% Runtime` appended. Probably from some weird copy pasting that I do when gathering my dependencies.
+Which is odd! Logback is clearly in the library-dependencies. 
+```
+// inside build.sbt
+"ch.logback". % Runtime
+```
+
+But what's that? Logback's dependency has `% Runtime` appended. Probably from some weird copy pasting error that happened when gathering my dependencies.
+
 I actually didn't know what this meant. So I looked it up, I found answers in the [sbt reference manual](https://www.scala-sbt.org/1.x/docs/Scopes.html#Scoping+by+the+configuration+axis)
 and apparently Runtime defines the classpath when you run your program with `sbt run`. So this explains why logging was only working, when we run our server from inside sbt!
 
-I am so happy that this was fixable so easily! But daaaamn, that took me some time to figure out :')
+With removing this and building the native-image, logack appears in the depedency-tree, when the native image is run!!!
+
+## Building the docker image
+
 
 ## Summary
 
 The initial start and setup of GraalVM with sbt is pretty easy and straight forward.
 Getting GraalVM to compile a sbt project is nice and simple. The challenge is to get it to build a good native image. This requires a lot of fine tuning. Getting the logging up and running on a native image was the biggest challenge for me with this small project.
-
-* * *
-
-The next post will be about getting the native image inside a docker container.
-This will be actually a bit more straight forward
 
 * * * 
 ### Sources
