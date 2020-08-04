@@ -182,7 +182,7 @@ Cannot convert configuration to a de.erewl.pricetracker.server.Config. Failures 
     - Key not found: 'host'.
     - Key not found: 'port'.
 ```
-The first three lines relate to the error that occurred during the first build. It simply says that logging hasn't been setup correctly (often due to the absence of a `src/main/resources/logback.xml`), triggering the default setting of not logging anything at all.
+The first three lines relate to the error that occurred during the first build. It simply says that logging hasn't been setup correctly (maybe due to the absence of a `src/main/resources/logback.xml` or some other misconfiguration), triggering the default setting of not logging anything at all.
 The second error states that a configuration file has not the right keys or cannot be found at all.
 Looking into `src/main/resources`:
 ```
@@ -266,12 +266,13 @@ libraryDependencies ++= Seq(
 ```
 Uh oh, what's that? Logback's dependency has `% Runtime` appended. 
 
-I actually didn't know what this meant or why it was there. I most probably blindly copy-pasted it from somewhere when gathering the dependencies for this project. 
+Not sure where this was coming from but I most probably blindly copy-pasted it from somewhere when gathering the dependencies for this project. 
 
-So I looked it up, I found answers in the [sbt reference manual](https://www.scala-sbt.org/1.x/docs/Scopes.html#Scoping+by+the+configuration+axis)
-and apparently Runtime defines the classpath when you run your program with `sbt run`. So this explains why logging was only working, when the server was run from inside sbt.
+[sbt reference manual](https://www.scala-sbt.org/1.x/docs/Scopes.html#Scoping+by+the+configuration+axis) states that the appendix `Runtime` defines that this dependency will be only included in the runtime classpath. 
 
-With removing this and building the native-image, logback appears in the depedency-tree, when the native image is run!!!
+So this explains probably why logging was only working, when the server was run from inside sbt.
+
+With removing this and building the native-image, logback appears in the depedency-tree and logging works when the native image is executed!
 
 
 ### Building native images - Summary
