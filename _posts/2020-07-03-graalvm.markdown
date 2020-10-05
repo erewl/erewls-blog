@@ -106,21 +106,21 @@ $GRAALHOME/bin/gu install native-image
 [sbt-native-packager](https://sbt-native-packager.readthedocs.io/en/latest/) provides functionality to build packages efficiently (e.g. building Docker images) and added to that, it also provides support for building native images.
 In order to build native images with sbt commands this plugin has to be added to the project:
 
-```java scala
+```scala
 // inside project/plugins.sbt
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
 ```
 
 And the `GraalVMNativeImagePlugin` needs to be enabled:
 
-```java scala
+```scala
 // inside build.sbt
 enablePlugins(GraalVMNativeImagePlugin)
 ```
 
 From within sbt it should be able to autocomplete and suggest graal-commands, e.g.:
 
-```java scala
+```scala
 sbt:apply-at-vdb> graalvm
 graalvm-native-image:       graalvmNativeImageOptions
 ```
@@ -158,7 +158,7 @@ To diagnose the issue you can use the --allow-incomplete-classpath option.
 The missing type is then reported at run time when it is accessed the first time.
 ```
 Actually a good hint on where to start fine-tuning the GraalVM config:
-```java scala
+```scala
 // inside build.sbt
 graalVMNativeImageOptions ++= Seq(
 	"--allow-incomplete-classpath",
@@ -220,7 +220,8 @@ So inside the `resource-config.json` we can include our `application.conf` and o
 But writing those config files can be tedious and it is difficult in larger projects to find all necessary classes that need to be included.
 GraalVM provides some support with writing those files and actually does all the work. In the project's root directory a configs-folder can be created which will contain all necessary config-files.
 For writing the configuration files we will build a normal jar-file with the help of the `sbt-assembly` plugin. Adding it to the project like so:
-```java scala sbt
+
+```scala
   // inside project/plugins.sbt
   addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
 ```
@@ -236,7 +237,7 @@ With the command above the jar gets to run with GraalVM but adds [dynamic lookup
 
 Those generated files can be included in the GraalVMNativeImageOptions:
 
-```java scala
+```scala
 // build.sbt
 graalVMNativeImageOptions ++= Seq(
 	"--allow-incomplete-classpath",
@@ -287,7 +288,7 @@ So it must be something with the dependencies?
 For further investigation, I added the [sbt-dependency-graph](https://github.com/jrudolph/sbt-dependency-graph) plugin and checked out the dependency-tree with `sbt dependencyBrowserTree`. The library `logback` wasn't included in the dependency tree.
 Which is odd, since `logback` is clearly present in the project's library-dependencies.
 
-```java scala
+```scala
 // inside build.sbt
 libraryDependencies ++= Seq(
 	...
@@ -318,13 +319,13 @@ A successful setup of sbt and GraalVM to build native-images requires to:
   gu install native-image
   ```
 - add sbt-native-packager and sbt-assembly to sbt:
-  ```java scala sbt
+  ```scala
   // inside project/plugins.sbt
   addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
   addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
   ```
 - enable the GraalVM-Plugin:
-  ```java scala sbt
+  ```scala
   // inside build.sbt
   enablePlugins(GraalVMNativeImagePlugin)
   ```
@@ -335,7 +336,7 @@ A successful setup of sbt and GraalVM to build native-images requires to:
   $GRAALHOME/bin/java -agentlib:native-image-agent=config-output-dir=./configs -jar target/scala-2.12/apply-at-vdb-assembly-0.1.0-SNAPSHOT.jar
   ```
 - fine-tune GraalVM with the following options and include the files that have been created in the previous step:
-  ```java scala
+  ```scala
   // build.sbt
   graalVMNativeImageOptions ++= Seq(
     "--allow-incomplete-classpath",
@@ -381,7 +382,7 @@ This application can be run locally via `java -jar target/scala-2.12/apply-at-vd
 
 Creating the Docker image for this jar-file can be done manually, but luckily `sbt-native-package` supports building regular Docker images out of the box, only the `DockerPlugin` needs to be enabled:
 
-```java scala
+```scala
 // build.sbt
 enablePlugins(DockerPlugin)
 ```
