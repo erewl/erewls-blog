@@ -6,10 +6,10 @@ createdAt: 2020-09-20 14:51:50 +0200
 tags: graalvm, scala, native image
 author: erewl
 
-canonical_url: 'https://vandebron.tech/'
+canonical_url: 'https://www.vandebron.tech/blog/building-native-images-and-compiling-with-graalvm-and-sbt'
 ---
 
-At Vandebron we organize a two-day long Hackathon every quarter, and a colleague and I took this chance to dig into the wonderful world of GraalVM.
+At [Vandebron](https://vandebron.tech) we organize a two-day long Hackathon every quarter, and a colleague and I took this chance to dig into the wonderful world of GraalVM.
 
 I've first heard of GraalVM around two years ago when Oleg Šelajev toured through Java User Groups in Germany and held talks about GraalVM. [Here](https://www.youtube.com/watch?v=GinNxS3OSi0) is one from 2019 (not Germany, but Spain this time).
 
