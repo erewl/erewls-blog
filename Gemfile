@@ -14,6 +14,7 @@ gem "jekyll" #, "~> 4.1.1"
 # gem "github-pages", group: :jekyll_plugins
 # If you have any plugins, put them here!
 
+gem "jekyll-theme-cayman"
 gem "minima"
 
 group :jekyll_plugins do
