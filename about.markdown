@@ -2,6 +2,8 @@
 layout: page
 title: About
 permalink: /about/
+layout: about
+banner: assets/images/latenight_goose.jpg
 ---
 Hi, my name is Katrin but in a lot of cases I also go by the username erewl.
 

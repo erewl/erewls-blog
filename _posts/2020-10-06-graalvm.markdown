@@ -3,10 +3,12 @@ layout: post
 title: Building native images and compiling with GraalVM and sbt
 description: At Vandebron we organized a two-day long Hackathon, a colleague and I took the chance to dig into the wonderful world of GraalVM.
 createdAt: 2020-09-20 14:51:50 +0200
-tags: graalvm, scala, native image
+tags: graalvm scala native-image
 author: erewl
 
 canonical_url: 'https://www.vandebron.tech/blog/building-native-images-and-compiling-with-graalvm-and-sbt'
+
+banner: https://cdn.pixabay.com/photo/2016/11/30/15/23/apple-1873078_1280.jpg
 ---
 
 At [Vandebron](https://vandebron.tech) we organize a two-day long Hackathon every quarter, and a colleague and I took this chance to dig into the wonderful world of GraalVM.

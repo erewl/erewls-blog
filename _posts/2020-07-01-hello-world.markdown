@@ -2,7 +2,8 @@
 layout: post
 title:  "Scio me nescire"
 date:   2020-07-01 14:51:50 +0200
-categories: introduction aboutme
+tags: introduction aboutme
+banner: https://cdn.pixabay.com/photo/2012/03/03/23/52/animal-21649_1280.jpg
 ---
 
 Hi! And welcome to my very first blog post.
