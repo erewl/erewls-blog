@@ -18,7 +18,6 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-markdown: kramdown
 title: erewl's blog
 #email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
@@ -28,10 +27,27 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: goldmorbid
 github_username:  erewl
 
+# favicon: _assets/images/capybara.png
+
 # Build settings
-theme: minima
+# theme: minima
+theme: jekyll-theme-yat
+
+markdown: kramdown
+kmarkdown:
+   input: GFM
+
 plugins:
- - jekyll-feed
+  - jekyll-feed
+  - jekyll-favicon
+
+
+header_pages:
+#   - index.html
+#   - archives.html
+#   - categories.html
+#   - tags.html
+  - about.markdown
 
 # Exclude from processing.
 # The following items will not be processed, by default.
