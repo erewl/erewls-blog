@@ -31,7 +31,7 @@ github_username:  erewl
 
 # Build settings
 # theme: minima
-theme: jekyll-theme-yat
+theme: jekyll-theme-cayman
 
 markdown: kramdown
 kmarkdown:
