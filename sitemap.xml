@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>/erewls-blog/2020/07/01/hello-world.html</loc>
+<lastmod>2020-07-01T12:51:50+00:00</lastmod>
+</url>
+<url>
+<loc>/erewls-blog/2020/10/06/graalvm.html</loc>
+<lastmod>2020-10-06T00:00:00+00:00</lastmod>
+</url>
+<url>
+<loc>/erewls-blog/about/</loc>
+</url>
+<url>
+<loc>/erewls-blog/</loc>
+</url>
+</urlset>
